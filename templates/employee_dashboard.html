@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — PayrollMS{% endblock %}
+{% block topbar_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-hd">
+  <h1>Hello, {{ current_user.username }} 👋</h1>
+  <p>Here's your overview for {{ now.strftime('%B %Y') }}</p>
+</div>
+
+<!-- Stats -->
+{% set approved = leaves | selectattr('status', 'equalto', 'approved') | list | length %}
+{% set net = payroll.net_salary if payroll else current_user.base_salary %}
+{% set deduction = payroll.deduction if payroll else 0 %}
+
+<div class="stat-row">
+  <div class="stat-tile">
+    <div class="stat-tile-label">Base Salary</div>
+    <div class="stat-tile-val indigo">₹{{ "{:,.0f}".format(current_user.base_salary) }}</div>
+    <div class="stat-tile-sub">per month</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-tile-label">Net This Month</div>
+    <div class="stat-tile-val green">₹{{ "{:,.0f}".format(net) }}</div>
+    <div class="stat-tile-sub">after deductions</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-tile-label">Leaves Taken</div>
+    <div class="stat-tile-val {% if approved > 2 %}red{% elif approved > 0 %}amber{% else %}indigo{% endif %}">{{ approved }}</div>
+    <div class="stat-tile-sub">approved this month</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-tile-label">Deduction</div>
+    <div class="stat-tile-val {% if deduction > 0 %}red{% else %}green{% endif %}">₹{{ "{:,.0f}".format(deduction) }}</div>
+    <div class="stat-tile-sub">this month</div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="action-row">
+  <a href="{{ url_for('main.leave') }}" class="action-tile">
+    <div class="action-tile-icon">◷</div>
+    <div class="action-tile-body">
+      <h3>Apply for Leave</h3>
+      <p>Request time off or view your leave history</p>
+    </div>
+  </a>
+  <a href="{{ url_for('main.payroll') }}" class="action-tile">
+    <div class="action-tile-icon">◈</div>
+    <div class="action-tile-body">
+      <h3>View Payroll</h3>
+      <p>Check salary breakdown and deductions</p>
+    </div>
+  </a>
+</div>
+
+<!-- Recent Leaves -->
+<div class="card">
+  <div class="card-head">
+    <span class="card-head-title"><span class="icon">◎</span> Recent Leaves — {{ now.strftime('%B %Y') }}</span>
+  </div>
+  {% if leaves %}
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Reason</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in leaves[:6] %}
+        <tr>
+          <td>{{ l.leave_date.strftime('%d %b %Y') }}</td>
+          <td>{{ l.reason }}</td>
+          <td><span class="badge badge-{{ l.status }}">{{ l.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body">
+    <div class="empty-state">
+      <div class="empty-icon">◎</div>
+      <p>No leave requests this month.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

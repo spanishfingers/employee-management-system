@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Leave — PayrollMS{% endblock %}
+{% block topbar_title %}Leave Management{% endblock %}
+
+{% block content %}
+<div class="page-hd">
+  <h1>Leave Management</h1>
+  <p>Apply for leave and track your requests</p>
+</div>
+
+<!-- Info bar -->
+<div class="info-box">
+  You have used <strong>{{ approved_this_month }}</strong> approved leave(s) this month.
+  The first <strong>{{ free_leaves }}</strong> leaves per month are free —
+  additional leaves deduct <strong>1 day's salary</strong> (base ÷ 30) each.
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:.9rem; margin-bottom:1.1rem;">
+
+  <!-- Apply Form -->
+  <div class="card" style="margin-bottom:0;">
+    <div class="card-head">
+      <span class="card-head-title"><span class="icon">✎</span> Apply for Leave</span>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('main.leave') }}">
+        <div class="form-group">
+          <label class="form-label" for="leave_date">Leave Date</label>
+          <input class="form-control" type="date" id="leave_date" name="leave_date"
+                 min="{{ now.strftime('%Y-%m-%d') }}" required/>
+        </div>
+        <div class="form-group" style="margin-bottom:1.2rem;">
+          <label class="form-label" for="reason">Reason</label>
+          <textarea class="form-control" id="reason" name="reason"
+                    placeholder="Briefly describe the reason..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit Request</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- This Month Summary -->
+  <div class="card" style="margin-bottom:0;">
+    <div class="card-head">
+      <span class="card-head-title"><span class="icon">◉</span> {{ now.strftime('%B') }} Summary</span>
+    </div>
+    <div class="card-body">
+      <div class="stat-row" style="grid-template-columns:1fr 1fr; margin-bottom:0;">
+        <div class="stat-tile">
+          <div class="stat-tile-label">Approved</div>
+          <div class="stat-tile-val green">{{ approved_this_month }}</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-label">Free Left</div>
+          {% set free_left = [free_leaves - approved_this_month, 0] | max %}
+          <div class="stat-tile-val indigo">{{ free_left }}</div>
+        </div>
+      </div>
+
+      {% if approved_this_month > free_leaves %}
+      <div class="warn-box">
+        ⚠ {{ approved_this_month - free_leaves }} extra leave(s) this month — salary deduction applied.
+      </div>
+      {% else %}
+      <div class="ok-box">
+        ✓ You're within the free leave limit for {{ now.strftime('%B') }}.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- History Table -->
+<div class="card">
+  <div class="card-head">
+    <span class="card-head-title"><span class="icon">◎</span> Leave History</span>
+  </div>
+  {% if leaves %}
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Leave Date</th>
+          <th>Period</th>
+          <th>Reason</th>
+          <th>Applied On</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in leaves %}
+        <tr>
+          <td><strong>{{ l.leave_date.strftime('%d %b %Y') }}</strong></td>
+          <td>{{ l.leave_date.strftime('%B %Y') }}</td>
+          <td>{{ l.reason }}</td>
+          <td>{{ l.created_at.strftime('%d %b %Y') }}</td>
+          <td><span class="badge badge-{{ l.status }}">{{ l.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body">
+    <div class="empty-state">
+      <div class="empty-icon">◎</div>
+      <p>No leave requests yet. Submit one above.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

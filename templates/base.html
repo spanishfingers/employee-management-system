@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}PayrollMS{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+
+{% if current_user.is_authenticated %}
+<div class="app-shell">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="dot"></span> PayrollMS
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Menu</div>
+
+      {% if current_user.role == 'admin' %}
+        <a href="{{ url_for('main.admin_dashboard') }}"
+           class="sidebar-link {% if request.endpoint == 'main.admin_dashboard' %}active{% endif %}">
+          <span class="icon">▦</span> Dashboard
+        </a>
+      {% else %}
+        <a href="{{ url_for('main.employee_dashboard') }}"
+           class="sidebar-link {% if request.endpoint == 'main.employee_dashboard' %}active{% endif %}">
+          <span class="icon">▦</span> Dashboard
+        </a>
+        <a href="{{ url_for('main.leave') }}"
+           class="sidebar-link {% if request.endpoint == 'main.leave' %}active{% endif %}">
+          <span class="icon">◷</span> Leave
+        </a>
+        <a href="{{ url_for('main.payroll') }}"
+           class="sidebar-link {% if request.endpoint == 'main.payroll' %}active{% endif %}">
+          <span class="icon">◈</span> Payroll
+        </a>
+      {% endif %}
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar">{{ current_user.username[0] }}</div>
+        <div>
+          <div class="user-info-name">{{ current_user.username }}</div>
+          <div class="user-info-role">{{ current_user.role }}</div>
+        </div>
+      </div>
+      <a href="{{ url_for('main.logout') }}" class="sidebar-link logout">
+        <span class="icon">→</span> Logout
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <header class="topbar">
+      <span class="topbar-title">{% block topbar_title %}{% endblock %}</span>
+      <span class="topbar-date" id="js-date"></span>
+    </header>
+
+    <div class="page-body">
+      <div class="alerts-wrap">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                {% if category == 'success' %}✓{% elif category == 'error' %}✕{% elif category == 'warning' %}⚠{% else %}i{% endif %}
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+      </div>
+
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+
+</div>
+
+{% else %}
+  {% block auth_content %}{% endblock %}
+{% endif %}
+
+<script>
+  const d = new Date();
+  const el = document.getElementById('js-date');
+  if (el) el.textContent = d.toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+</script>
+
+</body>
+</html>

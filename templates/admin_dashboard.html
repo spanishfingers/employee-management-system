@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — PayrollMS{% endblock %}
+{% block topbar_title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-hd">
+  <h1>Admin Dashboard</h1>
+  <p>{{ now.strftime('%B %Y') }} — Leave approvals &amp; payroll overview</p>
+</div>
+
+<!-- Stats -->
+<div class="stat-row">
+  <div class="stat-tile">
+    <div class="stat-tile-label">Employees</div>
+    <div class="stat-tile-val indigo">{{ payroll_summary | length }}</div>
+    <div class="stat-tile-sub">registered</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-tile-label">Pending Leaves</div>
+    <div class="stat-tile-val amber">{{ pending_leaves | length }}</div>
+    <div class="stat-tile-sub">awaiting action</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-tile-label">Total Payroll</div>
+    <div class="stat-tile-val green">
+      ₹{{ "{:,.0f}".format(payroll_summary | selectattr('payroll') | sum(attribute='payroll.net_salary')) }}
+    </div>
+    <div class="stat-tile-sub">net this month</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-tile-label">Total Deductions</div>
+    <div class="stat-tile-val red">
+      ₹{{ "{:,.0f}".format(payroll_summary | selectattr('payroll') | sum(attribute='payroll.deduction')) }}
+    </div>
+    <div class="stat-tile-sub">this month</div>
+  </div>
+</div>
+
+<!-- Pending Leave Requests -->
+<div class="card">
+  <div class="card-head">
+    <span class="card-head-title"><span class="icon">◷</span> Pending Leave Requests</span>
+    {% if pending_leaves %}
+    <span style="font-size:.78rem; background:var(--amber-light); color:var(--amber); padding:.2rem .65rem; border-radius:20px; font-weight:700;">
+      {{ pending_leaves | length }} pending
+    </span>
+    {% endif %}
+  </div>
+
+  {% if pending_leaves %}
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Leave Date</th>
+          <th>Reason</th>
+          <th>Applied On</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in pending_leaves %}
+        <tr>
+          <td>
+            <div style="display:flex; align-items:center; gap:.55rem;">
+              <div style="width:26px; height:26px; background:var(--accent-light); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:700; color:var(--accent); flex-shrink:0; text-transform:uppercase;">
+                {{ l.employee.username[0] }}
+              </div>
+              <strong>{{ l.employee.username }}</strong>
+            </div>
+          </td>
+          <td>{{ l.leave_date.strftime('%d %b %Y') }}</td>
+          <td style="max-width:200px;">{{ l.reason }}</td>
+          <td>{{ l.created_at.strftime('%d %b') }}</td>
+          <td>
+            <div style="display:flex; gap:.4rem;">
+              <form method="POST" action="{{ url_for('main.handle_leave', leave_id=l.id, action='approve') }}" style="margin:0;">
+                <button type="submit" class="btn btn-success btn-sm">✓ Approve</button>
+              </form>
+              <form method="POST" action="{{ url_for('main.handle_leave', leave_id=l.id, action='reject') }}" style="margin:0;">
+                <button type="submit" class="btn btn-danger btn-sm">✕ Reject</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body">
+    <div class="empty-state">
+      <div class="empty-icon">✓</div>
+      <p>No pending leave requests. All caught up!</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Employee Payroll Table -->
+<div class="card">
+  <div class="card-head">
+    <span class="card-head-title"><span class="icon">◈</span> Payroll Status — {{ now.strftime('%B %Y') }}</span>
+  </div>
+  {% if payroll_summary %}
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Base Salary</th>
+          <th>Leaves</th>
+          <th>Deduction</th>
+          <th>Net Salary</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in payroll_summary %}
+        <tr>
+          <td>
+            <div style="display:flex; align-items:center; gap:.55rem;">
+              <div style="width:26px; height:26px; background:var(--accent-light); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:700; color:var(--accent); flex-shrink:0; text-transform:uppercase;">
+                {{ item.employee.username[0] }}
+              </div>
+              <strong>{{ item.employee.username }}</strong>
+            </div>
+          </td>
+          <td>₹{{ "{:,.0f}".format(item.employee.base_salary) }}</td>
+          {% if item.payroll %}
+            <td>{{ item.payroll.leaves_taken }}</td>
+            <td style="color:{% if item.payroll.deduction > 0 %}var(--red){% else %}var(--green){% endif %};">
+              ₹{{ "{:,.0f}".format(item.payroll.deduction) }}
+            </td>
+            <td style="font-weight:600; color:var(--green);">₹{{ "{:,.0f}".format(item.payroll.net_salary) }}</td>
+            <td>
+              {% if item.payroll.deduction > 0 %}
+                <span class="badge badge-deducted">Deducted</span>
+              {% else %}
+                <span class="badge badge-full">Full Pay</span>
+              {% endif %}
+            </td>
+          {% else %}
+            <td>0</td>
+            <td style="color:var(--green);">₹0</td>
+            <td style="font-weight:600; color:var(--green);">₹{{ "{:,.0f}".format(item.employee.base_salary) }}</td>
+            <td><span class="badge badge-full">Full Pay</span></td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body">
+    <div class="empty-state">
+      <div class="empty-icon">◈</div>
+      <p>No employees registered yet.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

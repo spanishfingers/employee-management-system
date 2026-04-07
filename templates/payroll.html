@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Payroll — PayrollMS{% endblock %}
+{% block topbar_title %}Payroll{% endblock %}
+
+{% block content %}
+<div class="page-hd">
+  <h1>My Payroll</h1>
+  <p>{{ now.strftime('%B %Y') }} salary breakdown</p>
+</div>
+
+{% if current_payroll %}
+<!-- Current Month -->
+<div class="stat-row">
+  <div class="stat-tile">
+    <div class="stat-tile-label">Base Salary</div>
+    <div class="stat-tile-val indigo">₹{{ "{:,.0f}".format(current_payroll.base_salary) }}</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-tile-label">Leaves Taken</div>
+    <div class="stat-tile-val {% if current_payroll.leaves_taken > 2 %}red{% else %}amber{% endif %}">
+      {{ current_payroll.leaves_taken }}
+    </div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-tile-label">Deduction</div>
+    <div class="stat-tile-val {% if current_payroll.deduction > 0 %}red{% else %}green{% endif %}">
+      ₹{{ "{:,.0f}".format(current_payroll.deduction) }}
+    </div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-tile-label">Net Salary</div>
+    <div class="stat-tile-val green">₹{{ "{:,.0f}".format(current_payroll.net_salary) }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-head-title"><span class="icon">◈</span> {{ now.strftime('%B %Y') }} — Breakdown</span>
+  </div>
+  <div class="card-body">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.4rem;">
+      <span style="font-size:.82rem; color:var(--muted);">Net vs Base salary</span>
+      <span style="font-size:.82rem; font-weight:600; color:var(--accent);">
+        {{ "%.1f"|format((current_payroll.net_salary / current_payroll.base_salary) * 100) }}%
+      </span>
+    </div>
+    <div class="salary-bar-bg">
+      {% set pct = (current_payroll.net_salary / current_payroll.base_salary * 100) | int %}
+      <div class="salary-bar-fill" style="width:{{ pct }}%;"></div>
+    </div>
+
+    {% if current_payroll.deduction > 0 %}
+    <div class="warn-box">
+      ₹{{ "{:,.0f}".format(current_payroll.deduction) }} deducted for
+      {{ current_payroll.leaves_taken - 2 }} extra leave(s) beyond the 2 free per month.
+    </div>
+    {% else %}
+    <div class="ok-box">
+      ✓ No deductions this month — full salary credited.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="card-body">
+    <div class="empty-state">
+      <div class="empty-icon">◈</div>
+      <p>No payroll record yet. It will appear once leave data is processed.</p>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- History -->
+<div class="card">
+  <div class="card-head">
+    <span class="card-head-title"><span class="icon">◎</span> Payroll History</span>
+  </div>
+  {% if all_payroll %}
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th>Base</th>
+          <th>Leaves</th>
+          <th>Deduction</th>
+          <th>Net Salary</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set months = ['','January','February','March','April','May','June','July','August','September','October','November','December'] %}
+        {% for p in all_payroll %}
+        <tr>
+          <td><strong>{{ months[p.month] }} {{ p.year }}</strong></td>
+          <td>₹{{ "{:,.0f}".format(p.base_salary) }}</td>
+          <td>{{ p.leaves_taken }}</td>
+          <td style="color:{% if p.deduction > 0 %}var(--red){% else %}var(--green){% endif %};">
+            ₹{{ "{:,.0f}".format(p.deduction) }}
+          </td>
+          <td style="color:var(--green); font-weight:600;">₹{{ "{:,.0f}".format(p.net_salary) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body">
+    <div class="empty-state">
+      <div class="empty-icon">◎</div>
+      <p>No payroll history found.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Register — PayrollMS{% endblock %}
+
+{% block auth_content %}
+<div class="auth-page">
+
+  <div class="auth-panel-left">
+    <div class="auth-brand">
+      <span class="dot"></span> PayrollMS
+    </div>
+    <div class="auth-panel-tagline">
+      <h2>Join your team today.</h2>
+      <p>Create your employee account in seconds.</p>
+    </div>
+  </div>
+
+  <div class="auth-panel-right">
+    <div class="auth-form-box">
+
+      <h1>Create account</h1>
+      <p class="subtitle">Register as a new employee.</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}" style="margin-bottom:.9rem;">
+              {% if category == 'success' %}✓{% elif category == 'error' %}✕{% else %}i{% endif %}
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('main.register') }}">
+        <div class="form-group">
+          <label class="form-label" for="username">Choose a username</label>
+          <input class="form-control" type="text" id="username" name="username"
+                 placeholder="Pick a unique username" required autocomplete="username"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input class="form-control" type="password" id="password" name="password"
+                 placeholder="At least 4 characters" required autocomplete="new-password"/>
+        </div>
+        <div class="form-group" style="margin-bottom:1.4rem;">
+          <label class="form-label" for="confirm_password">Confirm password</label>
+          <input class="form-control" type="password" id="confirm_password" name="confirm_password"
+                 placeholder="Re-enter password" required autocomplete="new-password"/>
+        </div>
+
+        <div class="info-box" style="margin-bottom:1.1rem;">
+          All new accounts are created as <strong>Employee</strong> accounts with a
+          starting salary of <strong>₹50,000/month</strong>.
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full">Register</button>
+      </form>
+
+      <div class="divider">or</div>
+
+      <p style="text-align:center; font-size:.85rem; color:var(--muted);">
+        Already have an account?
+        <a href="{{ url_for('main.login') }}" style="font-weight:600;">Sign in</a>
+      </p>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}
